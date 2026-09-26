@@ -54,7 +54,7 @@ function avatar(m){const photo=typeof m.photo==='string' && /^data:image\/(png|j
 function render() {
   $$('#nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===page);b.setAttribute('aria-current',b.dataset.page===page?'page':'false');});
   const title=navItems.find(n=>n[0]===page)?.[2]||'Tổng quan';
-  $('#main').innerHTML='<div class="breadcrumb">Không gian chung <span>/</span> Tổ chuyên môn 4 <span>/</span> '+title+'</div>'+(storageProblem?'<div class="error" role="alert">'+esc(storageProblem)+'</div>':'')+({overview:overview,members:members,meetings:meetings,research:research,lessons:lessons,awards:awards,personal:personal,settings:settings}[page]||overview)()+'<footer class="footer"><span>Trường học 5.0 · Kết nối tri thức, nuôi dưỡng tương lai</span><span>Trường Tiểu học Trương Định</span></footer>';
+  $('#main').innerHTML='<div class="breadcrumb">Không gian chung <span>/</span> Tổ chuyên môn 4 <span>/</span> '+title+'</div>'+(storageProblem?'<div class="error" role="alert">'+esc(storageProblem)+'</div>':'')+({overview:overview,members:members,meetings:meetings,research:research,lessons:lessons,awards:awards,personal:personal,settings:settings}[page]||overview)()+'<footer class="footer"><span>Hệ thống được thiết kế bởi <strong>Cô Trần Thị Thu Hương</strong> và <strong>thầy Lê Thành Tạo</strong>.</span><span>Mọi đóng góp xin gửi về: <a href="mailto:hcmtranle@gmail.com">hcmtranle@gmail.com</a></span></footer>';
   bindPage();
 }
 function stat(label,value,note,i,gold=false){return '<div class="stat"><div class="stat-top">'+label+'<span class="stat-icon'+(gold?' gold':'')+'">'+icon(i)+'</span></div><div class="stat-value">'+value+'</div><div class="stat-note">'+note+'</div></div>';}
@@ -170,3 +170,6 @@ function resetData(){
 }
 $('#about-preview').onclick=()=>openDialog('Bản xem thử · Trường học 5.0','<p>Cô có thể thử quản lý thành viên, nhập Excel, lập lịch, điểm danh và ghi chú cá nhân.</p><p class="small muted">Dữ liệu lưu trong trình duyệt hiện tại. Chưa có đăng nhập, phân quyền, duyệt tài khoản, đồng bộ Drive, Gemini hoặc gửi thông báo. Các module còn lại đang ở bước phác thảo giao diện.</p><div class="dialog-actions"><button class="btn primary" data-close>Đã hiểu</button></div>');
 render();
+
+function updateClock(){ const now=new Date(); const zone={timeZone:"Asia/Ho_Chi_Minh"}; const clock=document.getElementById("live-time"); clock.textContent=new Intl.DateTimeFormat("vi-VN",{...zone,hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(now); clock.dateTime=now.toISOString(); document.getElementById("live-date").textContent=new Intl.DateTimeFormat("vi-VN",{...zone,weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"}).format(now); }
+updateClock(); setInterval(updateClock,1000);
