@@ -189,6 +189,7 @@ function db_() {
 function sheet_(ss, name, headers) {
   const sh = ss.getSheetByName(name) || ss.insertSheet(name);
   if (sh.getLastRow() === 0) sh.appendRow(headers);
+  else { const current=sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0]; const missing=headers.filter(h=>current.indexOf(h)<0); if(missing.length) sh.getRange(1,current.length+1,1,missing.length).setValues([missing]); }
   return sh;
 }
 function read_(ss, name) {
