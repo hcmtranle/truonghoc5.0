@@ -73,8 +73,14 @@ function bootstrap(token) {
     user: publicUser_(user),
     modules: read_(db, 'Modules').filter(m => user.role === 'ADMIN' || asBool_(m.visible)).sort((a,b) => String(a.order).localeCompare(String(b.order))),
     notebooks: read_(db, 'Notebooks').filter(n => user.role === 'ADMIN' || n.ownerEmail === user.email).sort((a,b) => String(b.createdAt).localeCompare(String(a.createdAt))),
-    approvals: user.role === 'ADMIN' ? read_(db, 'Users').filter(u => u.status === 'PENDING') : []
+    approvals: user.role === 'ADMIN' ? read_(db, 'Users').filter(u => u.status === 'PENDING') : [],
+    systemLinks: user.role === 'ADMIN' ? systemLinks_(db) : null
   };
+}
+
+function systemLinks_(db) {
+  const root = folder_('root');
+  return {github:'https://github.com/hcmtranle/truonghoc5.0', sheet:'https://docs.google.com/spreadsheets/d/'+db.getId()+'/edit', drive:'https://drive.google.com/drive/folders/'+root.getId()};
 }
 
 function saveModule(token, input) {
