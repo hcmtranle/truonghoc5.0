@@ -2,6 +2,7 @@
  * Trường học 5.0 — máy chủ dữ liệu Apps Script.
  * Dữ liệu lưu trong Drive và Google Sheets thuộc tài khoản triển khai.
  */
+const ADMIN_PASSWORD_HASH = '2c1cb738ce1571b2eeef294e3d1b569261cbb397f34c6ea9f14a0f6df4271a27';
 const TH50 = Object.freeze({
   ADMIN: 'hcmtranle@gmail.com',
   ROOT: 'Trường học 5.0',
@@ -14,6 +15,38 @@ function doGet() {
   return HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('Trường học 5.0 · Tổ chuyên môn 4')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+
+function adminLogin(password) {
+  if (digest_(String(password || '')) !== ADMIN_PASSWORD_HASH) throw new Error('Mật khẩu Admin không đúng.');
+  const db=db_(); let user=read_(db,'Users').find(r=>r.email===TH50.ADMIN);
+  if(!user){user={id:Utilities.getUuid(),email:TH50.ADMIN,name:'Trần Thị Thu Hương',phone:'',role:'ADMIN',status:'APPROVED',createdAt:now_(),approvedAt:now_(),approvedBy:TH50.ADMIN,personalFolderId:''};append_(db,'Users',user);}
+  return {token:issueToken_(user),user:publicUser_(user)};
+}
+function registerUser(input){
+  input=input||{};const email=cleanEmail_(input.email),name=cleanText_(input.name,100),phone=cleanText_(input.phone,25);
+  const requestedRole=['LEADER','TEACHER'].indexOf(input.requestedRole)>=0?input.requestedRole:'TEACHER';
+  if(!email||!name||!phone)throw new Error('Vui lòng nhập đủ họ tên, email và số điện thoại.');
+  if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))throw new Error('Email chưa đúng định dạng.');
+  const db=db_(),existing=read_(db,'Users').find(r=>r.email===email);
+  if(existing){if(existing.status==='APPROVED')return {status:'APPROVED',message:'Tài khoản đã được duyệt. Cô/thầy có thể kích hoạt hoặc đăng nhập.'};return {status:existing.status,message:'Yêu cầu đã được gửi và đang chờ quản trị viên duyệt.'};}
+  append_(db,'Users',{id:Utilities.getUuid(),email:email,name:name,phone:phone,role:'TEACHER',requestedRole:requestedRole,status:'PENDING',createdAt:now_(),approvedAt:'',approvedBy:'',personalFolderId:'',activationHash:'',activationExpiry:''});
+  return {status:'PENDING',message:'Đã gửi đăng ký đến quản trị viên.'};
+}
+function adminApprovals(token){requireRole_(token,['ADMIN']);return read_(db_(),'Users').filter(u=>u.status==='PENDING');}
+function approveRegistration(token,email,role){
+  const admin=requireRole_(token,['ADMIN']),db=db_();email=cleanEmail_(email);
+  role=['LEADER','TEACHER'].indexOf(role)>=0?role:'TEACHER';const code=('000000'+Math.floor(Math.random()*1000000)).slice(-6);
+  const u=updateWhere_(db,'Users',r=>r.email===email,r=>Object.assign(r,{role:role,status:'INVITED',approvedAt:now_(),approvedBy:admin.email,activationHash:digest_(code),activationExpiry:Date.now()+7*86400000}));
+  MailApp.sendEmail({to:email,subject:'Tài khoản Trường học 5.0 đã được duyệt',htmlBody:'<p>Xin chào '+escapeHtml_(u.name)+',</p><p>Tài khoản của cô/thầy đã được duyệt với vai trò <b>'+escapeHtml_(role==='LEADER'?'Tổ trưởng':'Giáo viên')+'</b>.</p><p>Mã kích hoạt: <b style="font-size:22px;letter-spacing:4px">'+code+'</b></p><p>Mở ứng dụng: <a href="'+ScriptApp.getService().getUrl()+'">'+ScriptApp.getService().getUrl()+'</a></p>',name:'Trường học 5.0'});
+  return true;
+}
+function activateAccount(input){
+  input=input||{};const email=cleanEmail_(input.email),code=String(input.code||'').replace(/\D/g,'');const db=db_();
+  const u=read_(db,'Users').find(r=>r.email===email);if(!u||u.status!=='INVITED'||Number(u.activationExpiry)<Date.now()||u.activationHash!==digest_(code))throw new Error('Mã kích hoạt không đúng hoặc đã hết hạn.');
+  updateWhere_(db,'Users',r=>r.email===email,r=>Object.assign(r,{status:'APPROVED',activationHash:'',activationExpiry:''}));
+  const next=read_(db,'Users').find(r=>r.email===email);return {token:issueToken_(next),user:publicUser_(next)};
 }
 
 function requestLogin(input) {
@@ -146,7 +179,7 @@ function db_() {
     props.setProperty('dbId', ss.getId());
     folder_('root').addFile(DriveApp.getFileById(ss.getId()));
   }
-  [['Users',['id','email','name','phone','role','status','createdAt','approvedAt','approvedBy','personalFolderId']],
+  [['Users',['id','email','name','phone','role','requestedRole','status','createdAt','approvedAt','approvedBy','personalFolderId','activationHash','activationExpiry']],
    ['LoginCodes',['id','email','codeHash','expiresAt','used','createdAt','usedAt']],
    ['Modules',['id','icon','name','description','deployUrl','scriptUrl','driveUrl','status','visible','order','updatedAt','updatedBy']],
    ['Notebooks',['id','title','meetingTime','chair','content','ownerEmail','ownerName','createdAt','docUrl','pdfUrl','signatureUrl']],
