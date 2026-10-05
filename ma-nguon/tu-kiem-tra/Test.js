@@ -29,6 +29,7 @@ function selfTest_(q){
   const maDangNhap=(email)=>trongDonVi(db=>{append_(db,'LoginCodes',{id:Utilities.getUuid(),email:email,codeHash:digest_('246810'),expiresAt:Date.now()+600000,used:false,createdAt:now_()});return '246810'});
   let truoc='',mauId='',ss=null,qt='',tkAdmin='',tkGv='',soHop=null,emailDau=hanMucEmail_();
   buoc('hạn mức email còn lại hôm nay (trước khi thử)',()=>emailDau);
+  buoc('quyền Google Lịch của tài khoản hệ thống (chỉ đọc)',()=>{try{return capQuyenLichGoogle()}catch(e){return 'CHƯA CẤP: '+String(e.message).slice(0,90)}});
   buoc('đếm dữ liệu đơn vị gốc trước khi thử',()=>{truoc=demGoc();return truoc});
   buoc('tạo Sheet mẫu (bản thử) công khai xem bằng link',()=>{mauId=dvTaoSheetMau_();const f=DriveApp.getFileById(mauId);mong(f.getSharingAccess()===DriveApp.Access.ANYONE_WITH_LINK&&/\/copy$/.test(getThongTinDangKy().linkMau),'ai có link đều xem được, có link tạo bản sao');return f.getName()});
   buoc('tạo bản sao Sheet mẫu cho đơn vị thử',()=>{const f=DriveApp.getFileById(mauId).makeCopy('[THỬ MÁY] dữ liệu đơn vị thử');ss=SpreadsheetApp.openById(f.getId());return 'ok'});

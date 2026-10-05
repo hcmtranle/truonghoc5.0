@@ -43,6 +43,7 @@ Quay lại phiên bản cũ: `clasp deploy -i AKfycbxXjH7Q… -V <số phiên b�
 | 50 | 02/10/2026 | Dự án tổng: nhiều đơn vị đăng ký (trường / tổ), trang `?trang=cong-dong`, Admin dự án. |
 | 53 | 02/10/2026 | Đăng ký bằng bản sao Sheet mẫu + mã email, không mật khẩu; tệp tạm 30 ngày cho đơn vị đăng ký. |
 | 55 | 05/10/2026 | Trường đăng ký có nhiều tổ: bộ tổ mặc định (Tổ 1–5, Tổ Tiếng Anh – Tin học, Tổ Bộ môn) chọn/sửa khi đăng ký; giáo viên bắt buộc chọn tổ; Admin đổi tổ khi duyệt, chuyển tổ, sửa tên/ẩn tổ; trường cũ được thêm tổ còn thiếu. Tự kiểm tra 42/42. |
+| 57 | 05/10/2026 | Sửa lỗi tạo lịch họp “The script does not have permission… calendar”: tài khoản hệ thống chưa cấp quyền Google Lịch. Lịch họp trực tiếp/dán link vẫn được lưu và gửi email mời; họp Google Meet báo cách xử lý rõ ràng. Thêm hàm `capQuyenLichGoogle` (chạy một lần trong Apps Script để cấp quyền Lịch) và hướng dẫn trong Cài đặt. Tự kiểm tra 43/43. |
 
 ## Sao lưu dữ liệu (Google Drive của Cô, thư mục gốc)
 

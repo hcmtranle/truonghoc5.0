@@ -492,18 +492,31 @@ function createMeeting(token,input){
   const event={summary:title,location:location,description:description+(customUrl?'\n\nĐường dẫn họp trực tuyến: '+customUrl:''),start:{dateTime:start.toISOString(),timeZone:TH50.TZ},end:{dateTime:end.toISOString(),timeZone:TH50.TZ},attendees:emails.map(email=>({email:email}))};
   if(tool==='MEET')event.conferenceData={createRequest:{requestId:Utilities.getUuid(),conferenceSolutionKey:{type:'hangoutsMeet'}}};
   // Đơn vị đăng ký: chỉ lưu lịch trong hệ thống, không ghi Google Calendar và không gửi email mời từ tài khoản hệ thống.
-  const created=DV_.ma?{}:calendarCreate_(event,ownMail,tool),secretary=cleanEmail_(input.secretaryEmail);
+  // Ghi Google Lịch. Hệ thống chưa được cấp quyền Lịch (hoặc Google lỗi) thì vẫn lưu lịch họp và tự gửi email mời.
+  let created={},lichLoi='';
+  if(!DV_.ma){try{created=calendarCreate_(event,ownMail,tool,start,end)}catch(e){
+    lichLoi=String(e&&e.message||e);
+    if(tool==='MEET')throw new Error('Chưa tạo được phòng Google Meet vì hệ thống chưa được cấp quyền Google Lịch. Cô/thầy chọn “Dán đường dẫn” và dán link phòng họp; hoặc Admin cấp quyền Lịch một lần (hướng dẫn trong mục Cài đặt).');
+    try{ownMail=emails.length>0&&MailApp.getRemainingDailyQuota()>=emails.length}catch(x){ownMail=false}
+  }}
+  const secretary=cleanEmail_(input.secretaryEmail);
   const item={id:Utilities.getUuid(),teamId:teamId,title:title,startAt:start.toISOString(),endAt:end.toISOString(),location:location,description:description,attendeeEmails:emails.join(','),secretaryEmail:allowed.indexOf(secretary)>=0?secretary:'',calendarEventId:created.id||'',meetUrl:(tool==='MEET'?created.hangoutLink:customUrl)||'',status:'ACTIVE',createdAt:now_(),createdBy:actor.email,mode:mode,onlineTool:tool,attendance:'{}'};
   append_(db,'Meetings',item);if(item.secretaryEmail)assignMeetingSecretary(token,item.id,item.secretaryEmail);
-  let mailed=!ownMail&&!DV_.ma;if(ownMail){try{sendMeetingMail_(db,item,emails,members,actor);mailed=true}catch(e){mailed=false}}
-  audit_(db,actor,'CREATE_MEETING',item.id);return Object.assign({},item,{mailed:mailed});
+  let mailed=!ownMail&&!DV_.ma&&!lichLoi;if(ownMail){try{sendMeetingMail_(db,item,emails,members,actor);mailed=true}catch(e){mailed=false}}
+  audit_(db,actor,'CREATE_MEETING',item.id);return Object.assign({},item,{mailed:mailed,lichGoogle:!DV_.ma&&!lichLoi});
 }
-function calendarCreate_(event,ownMail,tool){
-  CalendarApp.getDefaultCalendar().getId();
+function calendarCreate_(event,ownMail,tool,start,end){
+  const cal=CalendarApp.getDefaultCalendar();
   const response=UrlFetchApp.fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1&sendUpdates='+(ownMail?'none':'all'),{method:'post',contentType:'application/json',headers:{Authorization:'Bearer '+ScriptApp.getOAuthToken()},payload:JSON.stringify(event),muteHttpExceptions:true});
-  if(response.getResponseCode()>=300)throw new Error('Không tạo được lịch Google'+(tool==='MEET'?'/Meet':'')+': '+response.getContentText().slice(0,300));
-  return JSON.parse(response.getContentText());
+  if(response.getResponseCode()<300)return JSON.parse(response.getContentText());
+  if(tool==='MEET')throw new Error('Không tạo được lịch Google/Meet: '+response.getContentText().slice(0,300));
+  // Họp trực tiếp / dán link: Google Calendar API chưa bật thì ghi lịch bằng CalendarApp (không cần bật API).
+  const ev=cal.createEvent(event.summary,start,end,{description:event.description,location:event.location,guests:(event.attendees||[]).map(a=>a.email).join(','),sendInvites:!ownMail});
+  return {id:ev.getId()};
 }
+// Admin chạy MỘT LẦN trong trình soạn thảo Apps Script: chọn hàm capQuyenLichGoogle → bấm Chạy → Cho phép.
+// Sau đó lịch họp được ghi vào Google Lịch và tạo phòng Meet.
+function capQuyenLichGoogle(){const c=CalendarApp.getDefaultCalendar();return 'Đã cấp quyền Google Lịch cho lịch: '+c.getName();}
 function liveMeeting_(db,meetingId){const m=read_(db,'Meetings').find(x=>x.id===meetingId&&x.status!=='DELETED');if(!m)throw new Error('Không tìm thấy lịch họp.');return m;}
 function requireTeamManager_(actor,db,teamId){if(actor.role==='LEADER'&&activeTeamId_(actor,db)!==teamId)throw new Error('Tổ trưởng chỉ được thao tác trên lịch họp của tổ mình.');}
 function writeAttendance_(db,meetingId,mutate){
