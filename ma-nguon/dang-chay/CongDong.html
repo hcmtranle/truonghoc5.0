@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trường học 5.0 – Dự án tổng</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--green:#176953;--green-dark:#124d3e;--mint:#e8f2ec;--red:#a64242;--bg:#f5f7f3;--card:#fff;--text:#243c35;--sub:#70817a;--border:#e4eae5}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+.hero{background:linear-gradient(135deg,#124d3e,#176953);color:#fff;padding:36px 18px 30px;text-align:center;position:relative}
+.nut-admin{position:absolute;top:10px;right:12px;background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.35)}
+.hero h1{font-size:1.9rem}.hero p{opacity:.93;max-width:680px;margin:8px auto 0;font-size:.98rem}
+.hero .so{display:inline-block;margin-top:14px;background:rgba(255,255,255,.16);border-radius:20px;padding:5px 14px;font-size:.86rem}
+.wrap{max-width:900px;margin:0 auto;padding:18px 16px 60px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px}
+h2{font-size:1.12rem;margin-bottom:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.feat{background:#fbfcfa;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:.9rem}
+.feat b{display:block;margin-bottom:2px}
+.dk-to{display:flex;gap:8px;align-items:center;margin:4px 0}.dk-to input[type=checkbox]{width:auto;margin:0}.dk-to .dk-to-ten{flex:1;margin:0}
+.loai{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0}
+.loai label{border:2px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;font-size:.9rem;color:var(--text);margin:0;display:block}
+.loai label.on{border-color:var(--green);background:var(--mint)}
+.loai b{display:block;font-size:.98rem}.loai ul{margin:6px 0 0 18px;color:var(--sub);font-size:.84rem}
+.box{background:#fbfcfa;border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin:10px 0;font-size:.9rem}
+.box ol{margin:4px 0 4px 20px}.terms{max-height:240px;overflow:auto}
+.step{display:flex;gap:10px;align-items:flex-start;margin:10px 0}
+.num{flex:0 0 26px;height:26px;border-radius:50%;background:var(--green);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:.85rem}
+.mail{font-weight:700;background:#fef3c7;padding:1px 6px;border-radius:6px;word-break:break-all}
+label{display:block;font-size:.84rem;font-weight:600;color:var(--sub);margin-top:10px}
+input{width:100%;padding:9px 12px;border:1px solid #dce4de;border-radius:8px;font-size:.92rem;margin-top:4px;font-family:inherit}
+input[type=checkbox],input[type=radio]{width:auto;margin:3px 6px 0 0}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;border:1px solid var(--border);cursor:pointer;font-size:.9rem;font-weight:600;text-decoration:none;background:#fff;color:var(--text)}
+.btn-main{background:var(--green);border-color:var(--green);color:#fff}.btn-red{color:var(--red)}
+.btn-sm{padding:5px 10px;font-size:.8rem}.btn:disabled{opacity:.6;cursor:default}
+.alert{padding:10px 14px;border-radius:8px;margin-top:12px;font-size:.88rem;display:none;word-break:break-word}
+.alert.show{display:block}.ok{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}.err{background:#fff3ee;color:#a34539;border:1px solid #f3d3c9}.info{background:#eef6ef;color:var(--green-dark);border:1px solid #cfe3d6}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.75rem;font-weight:600}
+.item{background:#fbfcfa;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:8px;font-size:.88rem}
+.sub{color:var(--sub);font-size:.82rem;word-break:break-all}
+table{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:8px}th,td{padding:7px 8px;border-bottom:1px solid var(--border);text-align:center}th{background:#f7f9f6}td:first-child,th:first-child{text-align:left}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.foot{text-align:center;color:var(--sub);font-size:.82rem;margin-top:22px}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;align-items:center;justify-content:center;padding:16px}.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:16px;padding:22px;width:100%;max-width:340px;text-align:center;position:relative}
+.dong{position:absolute;top:8px;right:14px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--sub)}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--green-dark);color:#fff;padding:10px 20px;border-radius:20px;font-size:.9rem;z-index:99;display:none;max-width:90vw;text-align:center}
+@media(max-width:640px){.loai{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="hero">
+  <button class="btn btn-sm nut-admin" id="qtNut" onclick="qtMo()">🔑 Admin</button>
+  <h1>🏫 Trường học 5.0</h1>
+  <p>Không gian số cho sinh hoạt tổ chuyên môn: lịch họp, điểm danh, sổ họp, biên bản đúng thể thức và trợ lý AI nghiên cứu bài học. Miễn phí, không cần mật khẩu, dữ liệu nằm trong Google Sheet của chính đơn vị.</p>
+  <div class="so" id="soDonVi">Đang tải…</div>
+</div>
+<div class="wrap">
+
+  <div class="card">
+    <h2>Trường học 5.0 giúp tổ chuyên môn làm gì?</h2>
+    <div class="grid">
+      <div class="feat"><b>🗓️ Lịch họp và điểm danh</b>Tạo lịch họp trực tiếp hoặc trực tuyến; thành viên báo có mặt, vắng có lý do; tổ trưởng chốt điểm danh.</div>
+      <div class="feat"><b>📒 Sổ họp và biên bản</b>Ghi sổ họp, biên bản họp tổ đúng thể thức hành chính, có chữ ký từng thành viên; xuất Google Docs, PDF, Word.</div>
+      <div class="feat"><b>🔎 Nghiên cứu bài học</b>Trợ lý AI đồng hành từng bước theo định hướng Công văn 4069, lấy sự tiến bộ của học sinh làm trung tâm.</div>
+      <div class="feat"><b>📝 Trợ lý văn bản</b>Đọc công văn, kế hoạch; tóm tắt, lập danh sách việc cần làm và dự thảo văn bản để giáo viên chỉnh sửa.</div>
+      <div class="feat"><b>🎮 Bài giảng tương tác</b>Tạo trò chơi, bài trắc nghiệm, phiếu học tập; xem trước rồi tải về để dùng trên lớp.</div>
+      <div class="feat"><b>🔒 Dữ liệu thuộc về đơn vị</b>Mỗi đơn vị một Google Sheet riêng do chính đơn vị sở hữu; muốn dừng chỉ cần bỏ chia sẻ.</div>
+    </div>
+  </div>
+
+  <div class="card" id="dang-ky">
+    <h2>📝 Đăng ký sử dụng</h2>
+    <p class="sub" style="font-size:.9rem;word-break:normal">Thầy/cô chọn hình thức đăng ký phù hợp. Hai hình thức dùng chung các chức năng làm việc; khác nhau ở phạm vi quản lý.</p>
+    <div class="loai" id="dkLoai">
+      <label class="on"><input type="radio" name="dkLoai" value="TRUONG" checked><b>🏫 Đăng ký cho cả trường</b>
+        <ul><li>Người đăng ký là quản trị viên của trường.</li><li>Tạo nhiều tổ chuyên môn, mỗi tổ có tổ trưởng riêng.</li><li>Duyệt tài khoản, phân quyền cho toàn trường.</li><li>Đặt tên trường trên giao diện và văn bản.</li></ul></label>
+      <label><input type="radio" name="dkLoai" value="TO"><b>👥 Đăng ký cho một tổ chuyên môn</b>
+        <ul><li>Người đăng ký là tổ trưởng, quản lý luôn không gian của tổ.</li><li>Chỉ có một tổ; thêm, xóa và phân quyền tổ viên.</li><li>Không có phần quản lý nhiều tổ và module của trường.</li><li>Phù hợp khi trường chưa đăng ký chung.</li></ul></label>
+    </div>
+    <div class="box terms"><b>Điều khoản sử dụng</b><ol>
+      <li><b>Dữ liệu thuộc về đơn vị.</b> Danh sách giáo viên, tổ chuyên môn, lịch họp, điểm danh, nội dung sổ họp và biên bản được lưu trong một Google Sheet nằm trong Drive của chính thầy/cô (bản sao của Sheet mẫu).</li>
+      <li><b>Quyền của hệ thống.</b> Để trang hoạt động, thầy/cô chia sẻ riêng Sheet đó cho tài khoản hệ thống với quyền “Người chỉnh sửa”. Hệ thống không yêu cầu và không truy cập thư mục hay tệp nào khác trong Drive của thầy/cô; nhóm tác giả không sao chép và không dùng dữ liệu của đơn vị vào việc khác.</li>
+      <li><b>Không dùng mật khẩu.</b> Hệ thống không yêu cầu và không lưu mật khẩu của bất kỳ ai. Đăng ký và đăng nhập bằng mã gồm 6 chữ số gửi về email của chính người dùng. Giáo viên chỉ kích hoạt được tài khoản sau khi người quản trị của đơn vị duyệt.</li>
+      <li><b>Tệp xuất ra là bản tạm.</b> Khi thầy/cô xuất Google Docs, PDF, Word hoặc tệp HTML, hệ thống tạo tệp trong Drive của tài khoản hệ thống, mở quyền xem bằng đường link để thầy/cô tải về hoặc tạo bản sao, và tự xóa sau 30 ngày. Nội dung sổ họp, biên bản vẫn nằm trong Sheet của đơn vị và tạo lại tệp được; ảnh chữ ký và văn bản do AI tạo thì không tạo lại được sau khi hết hạn.</li>
+      <li><b>Thông tin dự án lưu lại.</b> Chỉ gồm: tên trường, tên tổ, họ tên và email người đăng ký, mã đơn vị, mã của Sheet và trạng thái sử dụng.</li>
+      <li><b>Trợ lý AI.</b> Mỗi giáo viên tự nhập khóa Gemini của mình trong mục Thông tin cá nhân. Tài liệu được gửi đến Gemini khi giáo viên bấm phân tích; không tải dữ liệu cá nhân nhạy cảm của học sinh. AI chỉ gợi ý; giáo viên đọc, sửa và quyết định.</li>
+      <li><b>Chức năng chưa mở cho đơn vị đăng ký.</b> Tự ghi lịch lên Google Calendar, tự tạo phòng Google Meet và gửi email mời họp. Họp trực tuyến thì dán đường dẫn phòng họp.</li>
+      <li><b>Giới hạn dịch vụ.</b> Sản phẩm chạy trên hạ tầng miễn phí của Google nên có thể chậm hoặc tạm ngừng khi hết hạn mức, trong đó có hạn mức số email gửi mỗi ngày (ảnh hưởng đến việc nhận mã đăng nhập); không cam kết hoạt động liên tục. Không dùng sản phẩm cho mục đích thương mại.</li>
+      <li><b>Ngừng sử dụng.</b> Thầy/cô ngừng bất cứ lúc nào bằng cách bỏ chia sẻ Sheet với tài khoản hệ thống; link của đơn vị sẽ ngừng hoạt động và dữ liệu vẫn nằm nguyên trong Drive của thầy/cô. Admin dự án có thể tạm ngừng một đơn vị khi phát hiện sử dụng sai mục đích.</li>
+    </ol></div>
+    <label style="display:flex;align-items:flex-start;color:var(--text);font-size:.92rem;font-weight:400"><input type="checkbox" id="dkDongY" onchange="dkHien()"> <span>Tôi đã đọc, hiểu và đồng ý với điều khoản sử dụng.</span></label>
+    <div id="dk-buoc" style="display:none">
+      <div class="box"><b>Hướng dẫn thiết lập (khoảng 3 phút)</b>
+        <div class="step"><div class="num">1</div><div><b>Tạo Sheet dữ liệu trong Drive của thầy/cô.</b> Đăng nhập Google bằng tài khoản của thầy/cô, bấm nút bên dưới, rồi bấm “Tạo bản sao”.<br><a id="dkLinkMau" class="btn btn-sm btn-main" style="margin-top:6px" target="_blank" rel="noopener">📄 Tạo bản sao Sheet mẫu</a> <span id="dkMauLoi" style="color:#a34539;font-size:.82rem"></span></div></div>
+        <div class="step"><div class="num">2</div><div><b>Chia sẻ Sheet cho hệ thống.</b> Trong Sheet vừa tạo, bấm nút “Chia sẻ” ở góc trên bên phải → nhập địa chỉ <span class="mail" id="dkEmailHeThong">…</span> → chọn quyền “Người chỉnh sửa” → bấm “Gửi”.</div></div>
+        <div class="step"><div class="num">3</div><div><b>Dán link Sheet và điền thông tin.</b> Sao chép đường link của Sheet trên thanh địa chỉ, dán vào ô “Link Google Sheet” bên dưới, điền các ô còn lại rồi bấm “Gửi đăng ký”.</div></div>
+        <div class="step"><div class="num">4</div><div><b>Xác nhận email.</b> Hệ thống gửi một mã gồm 6 chữ số về email của thầy/cô. Nhập mã vào ô hiện ra để hoàn tất đăng ký.</div></div>
+        <div class="step"><div class="num">5</div><div><b>Chờ duyệt và bắt đầu dùng.</b> Khi Admin dự án duyệt, thầy/cô nhận email kèm link của đơn vị. Mở link, chọn “Đăng nhập”, nhập email rồi bấm “Gửi mã đăng nhập”; sau đó thêm giáo viên ở mục Thành viên.</div></div>
+      </div>
+      <label>Link Google Sheet của thầy/cô *</label><input id="dkSheet" placeholder="https://docs.google.com/spreadsheets/d/...">
+      <label>Cơ quan chủ quản (dòng trên cùng của văn bản)</label><input id="dkCoQuan" maxlength="150" placeholder="Ví dụ: Ủy ban nhân dân phường ...">
+      <label>Tên trường *</label><input id="dkTruong" maxlength="120" placeholder="Ví dụ: Trường Tiểu học ...">
+      <div id="dkToBox" style="display:none"><label>Tên tổ chuyên môn *</label><input id="dkTo" maxlength="80" placeholder="Ví dụ: Tổ chuyên môn 4"></div>
+      <div id="dkDsToBox"><label>Các tổ chuyên môn của trường *</label><div class="sub" style="font-size:.84rem;margin:-2px 0 6px">Bỏ chọn tổ trường không có, sửa tên (ví dụ ghép “Tổ 1–2”) hoặc thêm tổ. Sau khi dùng, quản trị viên trường vẫn sửa được trong Cài đặt.</div><div id="dkDsTo"></div><button type="button" class="btn btn-sm" onclick="dkThemTo('',true)">➕ Thêm tổ</button></div>
+      <label>Họ tên thầy/cô *</label><input id="dkHoTen" maxlength="60">
+      <label>Email của thầy/cô (nhận mã xác nhận và mã đăng nhập) *</label><input id="dkEmail" type="email" maxlength="100">
+      <label>Mã đơn vị (xuất hiện trong link) *</label><input id="dkMa" maxlength="40" placeholder="Ví dụ: th-nguyenankhuong hoặc to4-truongdinh" oninput="dkXemLink()">
+      <div id="dkXemLink" class="sub" style="margin-top:4px"></div>
+      <div id="alDk" class="alert"></div>
+      <button class="btn btn-main" id="dkBtn" style="margin-top:12px" onclick="dkGui()">Gửi đăng ký</button>
+      <div id="dkXacNhan" style="display:none"><label>Mã xác nhận trong email (6 chữ số) *</label><input id="dkCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" style="max-width:220px;letter-spacing:4px;font-size:1.1rem">
+        <div id="alXn" class="alert"></div>
+        <button class="btn btn-main" id="xnBtn" style="margin-top:12px" onclick="dkXacNhan()">Xác nhận email</button></div>
+    </div>
+  </div>
+
+  <div class="card" id="qt-bang" style="display:none">
+    <div class="row" style="margin:0"><h2 style="flex:1;margin:0">🔑 Admin dự án</h2><button class="btn btn-sm" onclick="qtDangXuat()">Đăng xuất</button></div>
+    <h2 style="margin-top:14px;font-size:1rem">Đơn vị đăng ký <button class="btn btn-sm" onclick="qtTai()">🔄</button></h2>
+    <div class="sub" id="qt-email" style="word-break:normal"></div>
+    <div id="qt-dv"></div>
+    <h2 style="margin-top:16px;font-size:1rem">Số liệu sử dụng <button class="btn btn-sm" onclick="qtSoLieu()">Tải số liệu</button></h2>
+    <div class="sub">Chỉ là con số của từng đơn vị; không có tên giáo viên hay nội dung văn bản.</div>
+    <div id="qt-solieu"></div>
+  </div>
+
+  <div class="foot">Trường học 5.0 · thiết kế bởi cô Trần Thị Thu Hương và thầy Lê Thành Tạo · hcmtranle@gmail.com</div>
+</div>
+<div class="modal" id="mQt"><div class="modal-box"><button class="dong" onclick="qtDong()">×</button><div style="font-size:2rem">🔑</div><h2>Đăng nhập Admin dự án</h2><input id="qtMk" type="password" placeholder="Nhập mật khẩu..." autocomplete="off" onkeydown="if(event.key==='Enter')qtDangNhap()"><div id="alQt" class="alert" style="text-align:left"></div><button class="btn btn-main" style="width:100%;justify-content:center;margin-top:12px" onclick="qtDangNhap()">Đăng nhập</button></div></div>
+<div id="toast"></div>
+<script>
+var CD={info:{},token:''};
+function esc(s){return String(s===null||s===undefined?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(function(){t.style.display='none';},3500);}
+function al(id,m,c){var e=document.getElementById(id);e.className='alert show '+(c||'info');e.textContent=m;}
+function anAl(id){var e=document.getElementById(id);e.className='alert';e.textContent='';}
+google.script.run.withSuccessHandler(function(r){
+  CD.info=r||{};
+  document.getElementById('soDonVi').textContent='Đang có '+(CD.info.soDonVi||1)+' đơn vị sử dụng';
+  document.getElementById('dkEmailHeThong').textContent=CD.info.emailHeThong||'(chưa xác định)';
+  var l=document.getElementById('dkLinkMau');
+  if(CD.info.linkMau)l.href=CD.info.linkMau;else{l.style.display='none';document.getElementById('dkMauLoi').textContent='Sheet mẫu chưa sẵn sàng. Thầy/cô vui lòng quay lại sau.';}
+}).withFailureHandler(function(e){document.getElementById('soDonVi').textContent='Chưa tải được thông tin: '+e.message;}).getThongTinDangKy();
+
+// ----- Đăng ký -----
+function dkLoai(){var r=document.querySelector('input[name="dkLoai"]:checked');return r?r.value:'TRUONG';}
+document.getElementById('dkLoai').addEventListener('change',function(){
+  Array.prototype.forEach.call(this.querySelectorAll('label'),function(l){l.classList.toggle('on',l.querySelector('input').checked);});
+  document.getElementById('dkToBox').style.display=dkLoai()==='TO'?'block':'none';
+  document.getElementById('dkDsToBox').style.display=dkLoai()==='TO'?'none':'block';
+});
+var DK_TO_MAC_DINH=['Tổ 1','Tổ 2','Tổ 3','Tổ 4','Tổ 5','Tổ Tiếng Anh – Tin học','Tổ Bộ môn'];
+function dkThemTo(ten,moi){var d=document.createElement('div');d.className='dk-to';d.innerHTML='<input type="checkbox" checked aria-label="Chọn tổ"><input class="dk-to-ten" maxlength="80" placeholder="Tên tổ">';d.querySelector('.dk-to-ten').value=ten;document.getElementById('dkDsTo').appendChild(d);if(moi)d.querySelector('.dk-to-ten').focus();}
+DK_TO_MAC_DINH.forEach(function(t){dkThemTo(t);});
+function dkDsTo(){return Array.prototype.filter.call(document.querySelectorAll('#dkDsTo .dk-to'),function(d){return d.querySelector('input[type=checkbox]').checked&&d.querySelector('.dk-to-ten').value.trim();}).map(function(d){return d.querySelector('.dk-to-ten').value.trim();});}
+function dkHien(){document.getElementById('dk-buoc').style.display=document.getElementById('dkDongY').checked?'block':'none';}
+function dkXemLink(){
+  var ma=document.getElementById('dkMa').value.trim().toLowerCase();
+  document.getElementById('dkXemLink').textContent=ma&&CD.info.linkGoc?'Link của đơn vị sẽ là: '+CD.info.linkGoc+'?truong='+ma:'';
+}
+function dkGui(){
+  var v=function(id){return document.getElementById(id).value.trim();};
+  var d={dongY:document.getElementById('dkDongY').checked,loai:dkLoai(),linkSheet:v('dkSheet'),coQuan:v('dkCoQuan'),tenTruong:v('dkTruong'),tenTo:v('dkTo'),hoTen:v('dkHoTen'),email:v('dkEmail'),maDonVi:v('dkMa').toLowerCase()};
+  if(d.loai!=='TO'){d.dsTo=dkDsTo();if(!d.dsTo.length){al('alDk','Vui lòng chọn ít nhất một tổ chuyên môn của trường.','err');return;}}
+  if(!d.linkSheet||!d.tenTruong||!d.hoTen||!d.email||!d.maDonVi||(d.loai==='TO'&&!d.tenTo)){al('alDk','Vui lòng điền đủ các ô có dấu *','err');return;}
+  var btn=document.getElementById('dkBtn');btn.disabled=true;al('alDk','Đang kiểm tra Google Sheet và gửi mã xác nhận…','info');
+  google.script.run.withSuccessHandler(function(r){
+    btn.disabled=false;
+    if(!r||!r.success){al('alDk',(r&&r.message)||'Chưa đăng ký được','err');return;}
+    CD.ma=r.ma;al('alDk','✅ '+r.message,'ok');anAl('alXn');
+    document.getElementById('dkXacNhan').style.display='block';document.getElementById('dkCode').focus();
+  }).withFailureHandler(function(e){btn.disabled=false;al('alDk','Lỗi: '+e.message,'err');}).dangKyDonVi(d);
+}
+function dkXacNhan(){
+  var code=document.getElementById('dkCode').value.trim();if(!/^\d{6}$/.test(code)){al('alXn','Mã xác nhận gồm 6 chữ số.','err');return;}
+  var btn=document.getElementById('xnBtn');btn.disabled=true;al('alXn','Đang kiểm tra mã…','info');
+  google.script.run.withSuccessHandler(function(r){
+    btn.disabled=false;
+    if(!r||!r.success){al('alXn',(r&&r.message)||'Chưa xác nhận được','err');return;}
+    al('alXn','✅ '+r.message+' Link của đơn vị: '+r.link,'ok');document.getElementById('dkCode').value='';btn.style.display='none';
+  }).withFailureHandler(function(e){btn.disabled=false;al('alXn','Lỗi: '+e.message,'err');}).xacNhanDangKy(CD.ma,code);
+}
+
+// ----- Admin dự án (mật khẩu đặt trong Apps Script, không đặt từ trang này) -----
+function qtMo(){if(CD.token){document.getElementById('qt-bang').scrollIntoView({behavior:'smooth'});return;}anAl('alQt');document.getElementById('mQt').classList.add('show');setTimeout(function(){document.getElementById('qtMk').focus();},50);}
+function qtDong(){document.getElementById('mQt').classList.remove('show');document.getElementById('qtMk').value='';}
+function qtDangNhap(){
+  var mk=document.getElementById('qtMk').value;if(!mk)return;
+  google.script.run.withSuccessHandler(function(r){
+    if(!r||!r.success){al('alQt',(r&&r.message)||'Chưa đăng nhập được','err');return;}
+    CD.token=r.token;qtDong();
+    document.getElementById('qt-bang').style.display='block';document.getElementById('qtNut').textContent='✅ Admin';
+    qtTai();document.getElementById('qt-bang').scrollIntoView({behavior:'smooth'});
+  }).withFailureHandler(function(e){al('alQt','Lỗi: '+e.message,'err');}).dangNhapQuanTri(mk);
+}
+function qtDangXuat(){
+  CD.token='';document.getElementById('qt-dv').innerHTML='';document.getElementById('qt-solieu').innerHTML='';
+  document.getElementById('qt-bang').style.display='none';document.getElementById('qtNut').textContent='🔑 Admin';
+}
+function qtTai(){google.script.run.withSuccessHandler(qtVe).withFailureHandler(function(e){toast('Lỗi: '+e.message);}).getDonViDangKy(CD.token);}
+function qtVe(r){
+  var list=(r&&r.donVi)||[];
+  document.getElementById('qt-email').textContent=r&&r.emailConLai!==undefined?'Email còn gửi được hôm nay: '+r.emailConLai+' (dùng cho mã đăng nhập, mã kích hoạt của mọi đơn vị)':'';
+  var thuTu={'Chờ duyệt':0,'Chờ xác nhận email':1,'Đơn vị gốc':2,'Đang hoạt động':3,'Tạm ngừng':4,'Đã từ chối':5};
+  list=list.slice().sort(function(a,b){return (thuTu[a.trangThai]||0)-(thuTu[b.trangThai]||0);});
+  document.getElementById('qt-dv').innerHTML=list.length?list.map(function(x){
+    var goc=x.trangThai==='Đơn vị gốc',on=x.trangThai==='Đang hoạt động',cho=x.trangThai==='Chờ duyệt',xn=x.trangThai==='Chờ xác nhận email',ma=esc(x.ma);
+    return '<div class="item"><div><b>'+(x.loai==='TO'?esc(x.to)+' – ':'')+esc(x.truong)+'</b> · '+esc(x.hoTen)+'</div><div class="sub">'+(x.loai==='TO'?'Đăng ký theo tổ':goc?'Đơn vị gốc':'Đăng ký cả trường')+' · '+esc(x.email)+' · mã '+ma+(x.thoiGian?' · '+esc(x.thoiGian):'')+'</div>'+
+      (on||goc?'<div class="sub"><a href="'+esc(x.link)+'" target="_blank" rel="noopener">'+esc(x.link)+'</a></div>':'')+
+      '<div class="row"><span class="badge" style="background:'+(on||goc?'#d1fae5;color:#065f46':cho?'#fef9c3;color:#713f12':'#fee2e2;color:#991b1b')+'">'+esc(x.trangThai)+'</span>'+
+      (goc||xn?'':on?'<button class="btn btn-sm" data-ma="'+ma+'" onclick="qtDoi(this,\'Tạm ngừng\')">Tạm ngừng</button>':'<button class="btn btn-sm btn-main" data-ma="'+ma+'" onclick="qtDoi(this,\'Đang hoạt động\')">'+(cho?'Duyệt':'Mở lại')+'</button>')+
+      (cho||xn?'<button class="btn btn-sm btn-red" data-ma="'+ma+'" onclick="qtDoi(this,\'Đã từ chối\')">Từ chối</button>':'')+'</div></div>';
+  }).join(''):'<div class="sub" style="margin-top:8px">Chưa có đơn vị nào.</div>';
+}
+function qtDoi(btn,trangThai){
+  if(trangThai==='Đã từ chối'&&!confirm('Từ chối đăng ký của đơn vị '+btn.dataset.ma+'?'))return;
+  btn.disabled=true;
+  google.script.run.withSuccessHandler(function(r){
+    if(r&&r.success===false){toast(r.message);btn.disabled=false;return;}
+    toast(trangThai==='Đang hoạt động'?'✅ Đã kích hoạt đơn vị'+(r&&r.daGuiEmail?' và gửi email cho người đăng ký':''):trangThai==='Tạm ngừng'?'Đã tạm ngừng đơn vị':'Đã từ chối đăng ký');qtTai();
+  }).withFailureHandler(function(e){btn.disabled=false;toast('Lỗi: '+e.message);}).capNhatDonVi(CD.token,btn.dataset.ma,trangThai);
+}
+function qtSoLieu(){
+  var el=document.getElementById('qt-solieu');el.innerHTML='<div class="sub" style="margin-top:8px">Đang tải…</div>';
+  google.script.run.withSuccessHandler(function(l){
+    l=l||[];var cot=[['nguoiDung','Người dùng'],['to','Tổ'],['lichHop','Lịch họp'],['soHop','Sổ họp'],['bienBan','Biên bản'],['vanBanAI','Văn bản AI']],tong={};
+    cot.forEach(function(c){tong[c[0]]=0;});l.forEach(function(x){cot.forEach(function(c){tong[c[0]]+=Number(x[c[0]])||0;});});
+    el.innerHTML='<table><tr><th>Đơn vị</th>'+cot.map(function(c){return '<th>'+c[1]+'</th>';}).join('')+'</tr>'+
+      l.map(function(x){return '<tr><td>'+esc(x.ten)+(x.ok?'':' <span class="sub">(chưa mở được dữ liệu)</span>')+'</td>'+cot.map(function(c){return '<td>'+x[c[0]]+'</td>';}).join('')+'</tr>';}).join('')+
+      '<tr><th>Tổng '+l.length+' đơn vị</th>'+cot.map(function(c){return '<th>'+tong[c[0]]+'</th>';}).join('')+'</tr></table>';
+  }).withFailureHandler(function(e){el.innerHTML='';toast('Lỗi: '+e.message);}).getSoLieuCongDong(CD.token);
+}
+</script>
+</body>
+</html>
