@@ -44,9 +44,11 @@ Quay lại phiên bản cũ: `clasp deploy -i AKfycbxXjH7Q… -V <số phiên b�
 | 53 | 02/10/2026 | Đăng ký bằng bản sao Sheet mẫu + mã email, không mật khẩu; tệp tạm 30 ngày cho đơn vị đăng ký. |
 | 55 | 05/10/2026 | Trường đăng ký có nhiều tổ: bộ tổ mặc định (Tổ 1–5, Tổ Tiếng Anh – Tin học, Tổ Bộ môn) chọn/sửa khi đăng ký; giáo viên bắt buộc chọn tổ; Admin đổi tổ khi duyệt, chuyển tổ, sửa tên/ẩn tổ; trường cũ được thêm tổ còn thiếu. Tự kiểm tra 42/42. |
 | 57 | 05/10/2026 | Sửa lỗi tạo lịch họp “The script does not have permission… calendar”: tài khoản hệ thống chưa cấp quyền Google Lịch. Lịch họp trực tiếp/dán link vẫn được lưu và gửi email mời; họp Google Meet báo cách xử lý rõ ràng. Thêm hàm `capQuyenLichGoogle` (chạy một lần trong Apps Script để cấp quyền Lịch) và hướng dẫn trong Cài đặt. Tự kiểm tra 43/43. |
+| 60 | 10/10/2026 | Trang của trường đăng ký: quản trị trường không làm việc của tổ (ẩn sổ họp, biên bản, sổ cá nhân, nghiên cứu bài học, bài giảng); thẻ tài khoản mang tên trường; lịch họp của trường (hội đồng toàn trường / các tổ, liên tịch); thi đua giữa các tổ; “Thư mục lưu trữ của đơn vị”; email báo quản trị dự án khi có đơn vị đăng ký; trang chưa kích hoạt có email liên hệ. Tự kiểm tra 47/47. |
 
 ## Sao lưu dữ liệu (Google Drive của Cô, thư mục gốc)
 
 - `[SAO LUU 2026-10-01 truoc nang cap] Trường học 5.0 — Dữ liệu`
 - `[SAO LUU 2026-10-02 truoc du an tong] Trường học 5.0 — Dữ liệu`
 - `[SAO LUU 2026-10-05 truoc nhieu to] Trường học 5.0 — Dữ liệu`
+- `[SAO LUU 2026-10-10 truoc trang truong] Trường học 5.0 — Dữ liệu`

@@ -125,6 +125,8 @@ function verifyLogin(input) {
 
 
 function systemLinks_(db) {
+  // Đơn vị đăng ký: Sheet dữ liệu của chính đơn vị + thư mục lưu trữ do quản trị đơn vị tự gán (không phải Drive của quản trị dự án).
+  if(DV_.ma){const id=P_().getProperty('thuMucDonVi')||'';return {donVi:true,sheet:'https://docs.google.com/spreadsheets/d/'+db.getId()+'/edit',thuMucId:id,thuMuc:id?'https://drive.google.com/drive/folders/'+id:''};}
   const root = folder_('root');
   return {github:'https://github.com/hcmtranle/truonghoc5.0', sheet:'https://docs.google.com/spreadsheets/d/'+db.getId()+'/edit', drive:'https://drive.google.com/drive/folders/'+root.getId()};
 }
@@ -342,7 +344,7 @@ function activeTeamId_(u,db,requested){
   if(u.role==='ADMIN'){const t=teams.find(t=>asBool_(t.active))||teams[0];return t?t.id:'';}
   return '';
 }
-function teamName_(db,teamId){const t=ensureCollabSheets_(db).find(x=>x.id===teamId);return t?t.name:'Tổ chuyên môn';}
+function teamName_(db,teamId){if(teamId==='truong')return org_().school;const t=ensureCollabSheets_(db).find(x=>x.id===teamId);return t?t.name:'Tổ chuyên môn';}
 function updateAll_(ss,name,match,transform){
   const sh=ss.getSheetByName(name),v=sh.getDataRange().getValues(),h=v[0];let n=0;
   for(let i=1;i<v.length;i++){const obj=Object.fromEntries(h.map((k,j)=>[k,v[i][j]]));if(match(obj)){const next=transform(obj);sh.getRange(i+1,1,1,h.length).setValues([h.map(k=>next[k]===undefined?'':next[k])]);n++;}}
@@ -374,7 +376,8 @@ function bootstrap(token,requestedTeam) {
     approvals: user.role === 'ADMIN' ? read_(db, 'Users').filter(u => u.status === 'PENDING') : [],
     systemLinks: user.role === 'ADMIN' ? systemLinks_(db) : null,
     teams: user.role==='ADMIN'?teams:teams.filter(t=>t.id===teamId), activeTeamId: teamId, teamMembers: teamMembers_(db,teamId),
-    meetings: read_(db,'Meetings').filter(m=>m.status!=='DELETED'&&m.teamId===teamId),
+    meetings: read_(db,'Meetings').filter(m=>m.status!=='DELETED'&&(m.teamId===teamId||m.teamId==='truong'&&(user.role==='ADMIN'||String(m.attendeeEmails).split(',').indexOf(user.email)>=0))),
+    truong: dvTruong_()&&user.role==='ADMIN'?soLieuTruong_(db):null,
     aiDocs:aiDocsFor_(db,user),
     aiStatus:{configured:!!userAiKey_(user),model:'gemini-3.8-flash'}
   };
@@ -478,12 +481,14 @@ function sendMeetingMail_(db,item,emails,members,actor){
 function createMeeting(token,input){
   const actor=requireRole_(token,['ADMIN','LEADER']),db=db_();ensureCollabSheets_(db);input=input||{};
   const title=cleanText_(input.title,180),start=new Date(input.startAt||input.when),end=input.endAt?new Date(input.endAt):new Date(start.getTime()+60*60000);
-  const teamId=actor.role==='ADMIN'?(cleanText_(input.teamId,80)||activeTeamId_(actor,db)):activeTeamId_(actor,db);
+  const loaiHop=dvTruong_()&&actor.role==='ADMIN'&&DV_LOAI_HOP[input.loaiHop]?input.loaiHop:'';
+  const teamId=loaiHop?'truong':actor.role==='ADMIN'?(cleanText_(input.teamId,80)||activeTeamId_(actor,db)):activeTeamId_(actor,db);
   if(!title||isNaN(start.getTime())||isNaN(end.getTime()))throw new Error('Vui lòng nhập tên và thời gian họp hợp lệ.');
   if(end.getTime()<=start.getTime())throw new Error('Giờ kết thúc phải sau giờ bắt đầu.');
   const mode=input.mode==='ONLINE'?'ONLINE':'OFFLINE',tool=mode==='ONLINE'?(input.onlineTool==='OTHER'||DV_.ma?'OTHER':'MEET'):'',customUrl=tool==='OTHER'?safeUrl_(input.customUrl):'';
   if(tool==='OTHER'&&!customUrl)throw new Error('Vui lòng dán đường dẫn phòng họp trực tuyến.');
-  const members=teamMembers_(db,teamId).filter(m=>m.accountStatus!=='DISABLED'),allowed=members.map(m=>m.email);
+  const members=loaiHop?thanhPhanHop_(db,loaiHop):teamMembers_(db,teamId).filter(m=>m.accountStatus!=='DISABLED'),allowed=members.map(m=>m.email);
+  if(loaiHop){input.attendeeEmails=allowed;if(!allowed.length)throw new Error('Chưa có thành viên phù hợp để mời họp.');}
   let emails=Array.isArray(input.attendeeEmails)?input.attendeeEmails.map(cleanEmail_):(input.attendeeEmails?[cleanEmail_(input.attendeeEmails)]:allowed);
   emails=emails.filter((e,i,a)=>e&&allowed.indexOf(e)>=0&&a.indexOf(e)===i);
   const location=cleanText_(input.location||input.place,180)||(mode==='ONLINE'?'Trực tuyến':''),description=cleanText_(input.description,4000);
@@ -501,9 +506,12 @@ function createMeeting(token,input){
   }}
   const secretary=cleanEmail_(input.secretaryEmail);
   const item={id:Utilities.getUuid(),teamId:teamId,title:title,startAt:start.toISOString(),endAt:end.toISOString(),location:location,description:description,attendeeEmails:emails.join(','),secretaryEmail:allowed.indexOf(secretary)>=0?secretary:'',calendarEventId:created.id||'',meetUrl:(tool==='MEET'?created.hangoutLink:customUrl)||'',status:'ACTIVE',createdAt:now_(),createdBy:actor.email,mode:mode,onlineTool:tool,attendance:'{}'};
+  if(loaiHop){themCot_(db,'Meetings','loaiHop');item.loaiHop=loaiHop;}
   append_(db,'Meetings',item);if(item.secretaryEmail)assignMeetingSecretary(token,item.id,item.secretaryEmail);
   let mailed=!ownMail&&!DV_.ma&&!lichLoi;if(ownMail){try{sendMeetingMail_(db,item,emails,members,actor);mailed=true}catch(e){mailed=false}}
-  audit_(db,actor,'CREATE_MEETING',item.id);return Object.assign({},item,{mailed:mailed,lichGoogle:!DV_.ma&&!lichLoi});
+  // Trường đăng ký: họp hội đồng (các tổ) và họp liên tịch tự báo email cho tổ trưởng và Ban giám hiệu (còn hạn mức).
+  let baoTo=0;if(loaiHop&&loaiHop!=='HOI_DONG_TOAN_TRUONG'){const nhan=members.filter(m=>m.vaiTro==='LEADER'||m.vaiTro==='ADMIN').map(m=>m.email);try{if(nhan.length&&hanMucEmail_()>=nhan.length+10){sendMeetingMail_(db,item,nhan,members,actor);baoTo=nhan.length}}catch(e){}}
+  audit_(db,actor,'CREATE_MEETING',item.id);return Object.assign({},item,{mailed:mailed,lichGoogle:!DV_.ma&&!lichLoi,baoTo:baoTo,soMoi:emails.length});
 }
 function calendarCreate_(event,ownMail,tool,start,end){
   const cal=CalendarApp.getDefaultCalendar();
@@ -864,7 +872,7 @@ const DV_GIU_CHO=['goc','admin','mau','test','demo','truong','to','cong-dong','t
 const DV_DAU_MAU='TH50-SHEET-DU-LIEU';
 const DV_NGAY_TAM=30;
 // Các hàm đơn vị đăng ký được gọi. Không có: đăng nhập Admin gốc, cài trigger, các hàm của Admin dự án.
-const DV_API=['registerUser','activateAccount','requestAccessCode','verifyLogin','listPublicTeams','getPublicConfig','bootstrap','logout','updateProfile','setMyGeminiKey','adminApprovals','adminUsers','setUserStatus','setUserPermissions','approveRegistration','saveModule','saveTeam','listTeams','listTeamMembers','addTeamMember','removeTeamMember','chuyenTo','leaderSetMemberPermissions','saveOrgSettings','setGeminiApiKey','getAiStatus','createMeeting','respondAttendance','setAttendance','deleteMeeting','assignMeetingSecretary','saveMeetingMinutes','exportMeetingMinutesPdf','exportMeetingMinutesDocx','deleteMinutes','saveNotebook','exportNotebookPdf','exportNotebookDocx','deleteNotebook','createPersonalNotebookFromMinutes','taoLaiTep','aiUpload','aiChat','aiExport','exportAiDocPdf','deleteAiDoc','aiLesson','aiSaveHtml'];
+const DV_API=['registerUser','activateAccount','requestAccessCode','verifyLogin','listPublicTeams','getPublicConfig','bootstrap','logout','updateProfile','setMyGeminiKey','adminApprovals','adminUsers','setUserStatus','setUserPermissions','approveRegistration','saveModule','saveTeam','listTeams','listTeamMembers','addTeamMember','removeTeamMember','chuyenTo','thiDuaCacTo','ghiDiemThiDuaTo','xoaDiemThiDuaTo','luuThuMucDonVi','leaderSetMemberPermissions','saveOrgSettings','setGeminiApiKey','getAiStatus','createMeeting','respondAttendance','setAttendance','deleteMeeting','assignMeetingSecretary','saveMeetingMinutes','exportMeetingMinutesPdf','exportMeetingMinutesDocx','deleteMinutes','saveNotebook','exportNotebookPdf','exportNotebookDocx','deleteNotebook','createPersonalNotebookFromMinutes','taoLaiTep','aiUpload','aiChat','aiExport','exportAiDocPdf','deleteAiDoc','aiLesson','aiSaveHtml'];
 
 // Thuộc tính tập lệnh theo đơn vị: đơn vị gốc dùng khóa như cũ; đơn vị đăng ký có tiền tố riêng nên phiên đăng nhập,
 // khóa Gemini, thư mục tạm... của các đơn vị không lẫn vào nhau.
@@ -1001,6 +1009,78 @@ function chuyenTo(token,email,teamId){
   audit_(db,actor,'MOVE_TEAM',email+':'+teamId);return {moved:true,teamId:teamId};
 }
 
+// ---------- Trang của TRƯỜNG đăng ký (10/10/2026) ----------
+const DV_QT_EMAIL='hcmtranle@gmail.com'; // quản trị dự án tổng: nhận email khi có đơn vị đăng ký
+// Báo quản trị dự án ngay khi có trường/tổ xác nhận đăng ký, kèm link vào duyệt.
+function dvBaoQuanTri_(r){
+  try{
+    if(hanMucEmail_()<5)return;
+    const ten=(String(r.Loai)==='TO'?r.TenTo+' – ':'')+r.TenTruong;
+    MailApp.sendEmail({to:DV_QT_EMAIL,subject:(DV_PREFIX?'[THỬ] ':'')+'[Trường học 5.0] Đăng ký mới chờ duyệt: '+ten,name:'Trường học 5.0',
+      body:'Có đơn vị vừa đăng ký sử dụng Trường học 5.0 và đã xác nhận email:\n\n- Hình thức: '+(String(r.Loai)==='TO'?'Theo tổ chuyên môn':'Cả trường')+'\n- Đơn vị: '+ten+'\n- Người đăng ký: '+r.HoTen+' – '+r.Email+'\n- Mã đơn vị: '+r.MaDonVi+'\n\nVào trang dự án tổng để duyệt (bấm nút Admin, đăng nhập Admin dự án):\n'+DV_LINK+'?trang=cong-dong\n\n(Thư tự động từ Trường học 5.0.)'});
+  }catch(e){}
+}
+const DV_LOAI_HOP={HOI_DONG_TOAN_TRUONG:'Họp hội đồng – toàn trường',HOI_DONG_CAC_TO:'Họp hội đồng – các tổ chuyên môn',LIEN_TICH:'Họp liên tịch (tổ trưởng + Ban giám hiệu)'};
+function themCot_(db,bang,cot){const sh=db.getSheetByName(bang),h=sh.getRange(1,1,1,Math.max(1,sh.getLastColumn())).getValues()[0];if(h.indexOf(cot)<0)sh.getRange(1,h.length+1).setValue(cot);}
+// Thành phần họp cấp trường. Ban giám hiệu = tài khoản quản trị của trường.
+function thanhPhanHop_(db,loai){
+  const users=read_(db,'Users').filter(u=>u.status!=='DISABLED'&&u.status!=='PENDING'),ms=read_(db,'Memberships').filter(m=>m.status!=='REMOVED'&&m.status!=='DISABLED'),out={};
+  const them=(u,vt)=>{if(u&&u.email&&!out[u.email])out[u.email]={email:u.email,name:u.name||u.email,vaiTro:vt,accountStatus:u.status};};
+  users.filter(u=>u.role==='ADMIN').forEach(u=>them(u,'ADMIN'));
+  const laToTruong=m=>m.role==='LEADER'||(users.find(u=>u.email===m.userEmail)||{}).role==='LEADER';
+  ms.forEach(m=>{const u=users.find(x=>x.email===m.userEmail);if(!u)return;if(loai==='LIEN_TICH'){if(laToTruong(m))them(u,'LEADER');}else them(u,laToTruong(m)?'LEADER':'TEACHER');});
+  if(loai==='HOI_DONG_TOAN_TRUONG')users.forEach(u=>them(u,u.role==='LEADER'?'LEADER':u.role==='ADMIN'?'ADMIN':'TEACHER'));
+  return Object.keys(out).map(k=>out[k]);
+}
+function soLieuTruong_(db){
+  const teams=read_(db,'Teams').filter(t=>asBool_(t.active)),ms=read_(db,'Memberships').filter(m=>m.status!=='REMOVED'),users=read_(db,'Users');
+  return {soTo:teams.length,soThanhVien:ms.filter(m=>teams.some(t=>t.id===m.teamId)).length,choDuyet:users.filter(u=>String(u.status).toUpperCase()==='PENDING').length,
+    nguoiDangKy:(users.find(u=>u.role==='ADMIN')||{}).name||'',emailDangKy:(users.find(u=>u.role==='ADMIN')||{}).email||''};
+}
+// Thư mục lưu trữ của đơn vị: quản trị đơn vị dán link/ID thư mục Drive CỦA ĐƠN VỊ để tra cứu, quản lý hồ sơ.
+function luuThuMucDonVi(token,link){
+  requireRole_(token,['ADMIN']);if(!DV_.ma)throw new Error('Đơn vị gốc dùng thư mục Drive của dự án.');
+  const s=String(link||'').trim();let id='';
+  if(s){const m=s.match(/folders\/([-\w]{20,})/)||s.match(/^([-\w]{20,})$/)||s.match(/[?&]id=([-\w]{20,})/);if(!m)throw new Error('Chưa đúng link hoặc ID thư mục Google Drive. Thầy/cô mở thư mục, sao chép đường link trên thanh địa chỉ rồi dán vào.');id=m[1];}
+  if(id)P_().setProperty('thuMucDonVi',id);else P_().deleteProperty('thuMucDonVi');
+  return {thuMucId:id,thuMuc:id?'https://drive.google.com/drive/folders/'+id:''};
+}
+// ---------- Thi đua giữa các tổ ----------
+// Điểm tự động theo hoạt động của tổ trong kỳ + điểm cộng/trừ của quản trị trường (có lý do).
+const TD_HE_SO={lichHop:2,bienBan:3,soHop:1,sanPhamAI:1};
+function tdKy_(ky){ky=String(ky||'');return /^\d{4}-\d{2}$/.test(ky)?ky:'nam-hoc';}
+function tdTrongKy_(v,ky){if(ky==='nam-hoc')return true;const d=v instanceof Date?v:new Date(v);if(isNaN(d.getTime()))return false;return Utilities.formatDate(d,TH50.TZ,'yyyy-MM')===ky;}
+function tdSheet_(db){return sheet_(db,'ThiDuaTo',['id','teamId','ky','diem','lyDo','createdAt','createdBy']),db;}
+function thiDuaCacTo(token,ky){
+  const user=requireUser_(token),db=db_();ensureCollabSheets_(db);tdSheet_(db);ky=tdKy_(ky);
+  const teams=read_(db,'Teams').filter(t=>asBool_(t.active)),ms=read_(db,'Memberships').filter(m=>m.status!=='REMOVED'),toCua={};
+  ms.forEach(m=>{if(!toCua[m.userEmail])toCua[m.userEmail]=m.teamId;});
+  const rows=teams.map(t=>({teamId:t.id,ten:t.name,thanhVien:ms.filter(m=>m.teamId===t.id).length,lichHop:0,bienBan:0,soHop:0,sanPhamAI:0,moi:0,coMat:0,diemThem:0,ghiChu:[]}));
+  const r=id=>rows.find(x=>x.teamId===id);
+  read_(db,'Meetings').forEach(m=>{const x=r(m.teamId);if(!x||m.status==='DELETED'||!tdTrongKy_(m.startAt,ky))return;x.lichHop++;
+    if(new Date(m.endAt||m.startAt).getTime()<Date.now()){const moi=String(m.attendeeEmails||'').split(',').filter(Boolean);let a={};try{a=JSON.parse(m.attendance||'{}')||{}}catch(e){}x.moi+=moi.length;x.coMat+=moi.filter(e=>a[e]&&a[e].s==='PRESENT').length;}});
+  read_(db,'Minutes').forEach(n=>{const x=r(n.teamId);if(x&&liveDoc_(n)&&tdTrongKy_(n.createdAt,ky))x.bienBan++;});
+  read_(db,'Notebooks').forEach(n=>{const x=r(toCua[n.ownerEmail]);if(x&&liveDoc_(n)&&tdTrongKy_(n.createdAt,ky))x.soHop++;});
+  try{read_(db,'AiDocs').forEach(n=>{const x=r(n.teamId)||r(toCua[n.ownerEmail]);if(x&&n.status!=='DELETED'&&tdTrongKy_(n.createdAt,ky))x.sanPhamAI++;});}catch(e){}
+  const them=read_(db,'ThiDuaTo').filter(d=>d.ky===ky);
+  them.forEach(d=>{const x=r(d.teamId);if(x){x.diemThem+=Number(d.diem)||0;x.ghiChu.push({id:d.id,diem:Number(d.diem)||0,lyDo:String(d.lyDo||'')});}});
+  rows.forEach(x=>{x.tiLeDuHop=x.moi?Math.round(x.coMat/x.moi*100):null;x.diemTuDong=x.lichHop*TD_HE_SO.lichHop+x.bienBan*TD_HE_SO.bienBan+x.soHop*TD_HE_SO.soHop+x.sanPhamAI*TD_HE_SO.sanPhamAI+(x.tiLeDuHop===null?0:Math.round(x.tiLeDuHop/10));x.tong=x.diemTuDong+x.diemThem;delete x.moi;delete x.coMat;if(user.role!=='ADMIN')x.ghiChu=x.ghiChu.map(g=>({diem:g.diem,lyDo:g.lyDo}));});
+  rows.sort((a,b)=>b.tong-a.tong);let hang=0,truoc=null;rows.forEach((x,i)=>{if(x.tong!==truoc){hang=i+1;truoc=x.tong;}x.hang=hang;});
+  return {ky:ky,heSo:TD_HE_SO,rows:rows,laQuanTri:user.role==='ADMIN'};
+}
+function ghiDiemThiDuaTo(token,input){
+  const u=requireRole_(token,['ADMIN']),db=db_();ensureCollabSheets_(db);tdSheet_(db);input=input||{};
+  const teamId=cleanText_(input.teamId,80),diem=Number(input.diem),lyDo=cleanText_(input.lyDo,200),ky=tdKy_(input.ky);
+  if(!read_(db,'Teams').some(t=>t.id===teamId))throw new Error('Không tìm thấy tổ chuyên môn.');
+  if(!Number.isInteger(diem)||!diem||Math.abs(diem)>50)throw new Error('Số điểm là số nguyên khác 0, từ -50 đến 50.');
+  if(!lyDo)throw new Error('Vui lòng ghi lý do cộng/trừ điểm.');
+  const item={id:Utilities.getUuid(),teamId:teamId,ky:ky,diem:diem,lyDo:lyDo,createdAt:now_(),createdBy:u.email};append_(db,'ThiDuaTo',item);audit_(db,u,'THI_DUA_TO',teamId+':'+diem);return item;
+}
+function xoaDiemThiDuaTo(token,id){
+  const u=requireRole_(token,['ADMIN']),db=db_();tdSheet_(db);const sh=db.getSheetByName('ThiDuaTo'),v=sh.getDataRange().getValues(),i=v.findIndex((r,k)=>k>0&&String(r[0])===String(id));
+  if(i<1)throw new Error('Không tìm thấy dòng điểm.');sh.deleteRow(i+1);audit_(db,u,'XOA_THI_DUA_TO',id);return {deleted:true};
+}
+
 // Mọi lệnh từ trang của đơn vị đăng ký đi qua đây.
 function goi(ma,tenHam,thamSo){
   tenHam=String(tenHam||'');
@@ -1100,7 +1180,7 @@ function xacNhanDangKy(ma,code){
   if(code.length!==6||dvBam_(ma,code)!==String(r.MaXacNhan)){cache.put(dem,String(sai+1),600);return dvLoi_('Mã xác nhận không đúng.');}
   const sh=dvSo_(true).getSheetByName('DonVi');
   sh.getRange(r._row,dvCot_('TrangThai')).setValue('Chờ duyệt');sh.getRange(r._row,dvCot_('HanXacNhan'),1,2).setValues([['','']]);
-  dvXoaNho_(ma);
+  dvXoaNho_(ma);dvBaoQuanTri_(r);
   return {success:true,link:DV_LINK+'?truong='+ma,message:'Đã xác nhận email và ghi nhận đăng ký. Khi Admin dự án duyệt, thầy/cô sẽ nhận email kèm link của đơn vị và đăng nhập bằng mã gửi về chính email này.'};
 }
 
@@ -1180,7 +1260,7 @@ function dvTrang_(e){
   if(p.trang==='cong-dong')return HtmlService.createHtmlOutputFromFile('CongDong').setTitle('Trường học 5.0 – Dự án tổng').addMetaTag('viewport','width=device-width, initial-scale=1');
   if(!p.truong)return null;
   const ma=dvMa_(p.truong);
-  if(!dvVao_(ma))return HtmlService.createHtmlOutput('<div style="font-family:Segoe UI,Arial,sans-serif;max-width:540px;margin:70px auto;padding:24px;text-align:center;color:#243c35"><div style="font-size:44px">🏫</div><h2>Đơn vị này chưa được kích hoạt</h2><p>Link có mã “'+escapeHtml_(ma)+'” chưa hoạt động: đơn vị đang chờ duyệt, đã tạm ngừng, hoặc Google Sheet không còn chia sẻ cho hệ thống.</p><p><a target="_top" href="'+DV_LINK+'?trang=cong-dong">Xem trang dự án Trường học 5.0</a></p></div>').setTitle('Trường học 5.0').addMetaTag('viewport','width=device-width, initial-scale=1');
+  if(!dvVao_(ma))return HtmlService.createHtmlOutput('<div style="font-family:Segoe UI,Arial,sans-serif;max-width:540px;margin:70px auto;padding:24px;text-align:center;color:#243c35"><div style="font-size:44px">🏫</div><h2>Đơn vị này chưa được kích hoạt</h2><p>Link có mã “'+escapeHtml_(ma)+'” chưa hoạt động: đơn vị đang chờ duyệt, đã tạm ngừng, hoặc Google Sheet không còn chia sẻ cho hệ thống.</p><p>Để được kích hoạt nhanh, thầy cô gửi email đến <a href="mailto:'+DV_QT_EMAIL+'">'+DV_QT_EMAIL+'</a> để được kích hoạt.</p><p><a target="_top" href="'+DV_LINK+'?trang=cong-dong">Xem trang dự án Trường học 5.0</a></p></div>').setTitle('Trường học 5.0').addMetaTag('viewport','width=device-width, initial-scale=1');
   const ten=(DV_.loai==='TO'?DV_.to+' – ':'')+DV_.truong;
   const html=HtmlService.createHtmlOutputFromFile('Index').getContent().replace('<head>','<head><script>window.TH50_DV='+JSON.stringify(DV_.ma)+';window.TH50_DV_LOAI='+JSON.stringify(DV_.loai)+';window.TH50_DV_TEN='+JSON.stringify(ten).replace(/</g,'\\u003c')+';<\/script>');
   return HtmlService.createHtmlOutput(html).setTitle('Trường học 5.0 · '+ten).addMetaTag('viewport','width=device-width, initial-scale=1');
