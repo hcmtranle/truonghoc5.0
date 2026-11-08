@@ -17,9 +17,8 @@ function doGet(e) {
   const trang=dvTrang_(e);if(trang)return trang;
   return HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('Trường học 5.0')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1').setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
-
 
 function adminLogin(password) {
   if (digest_(String(password || '')) !== ADMIN_PASSWORD_HASH) throw new Error('Mật khẩu Admin không đúng.');
@@ -960,9 +959,9 @@ function dvThuMuc_(){
   let goc;if(id)goc=DriveApp.getFolderById(id);else{const it=DriveApp.getFoldersByName(TH50.ROOT);goc=it.hasNext()?it.next():DriveApp.createFolder(TH50.ROOT);}
   return con(con(goc,(DV_PREFIX?'[THỬ] ':'')+'Tệp tạm của đơn vị đăng ký'),DV_.ma);
 }
-// Tệp của đơn vị đăng ký nằm trong Drive của hệ thống nên phải mở quyền xem bằng đường link thì người dùng mới mở, tải được.
+// Tệp (đơn vị gốc lẫn đơn vị đăng ký) nằm trong Drive của hệ thống nên phải mở quyền xem bằng đường link thì người dùng mới mở, tải được.
 function dvChiaSe_(fileId){
-  if(!DV_.ma||!fileId)return;
+  if(!fileId)return;
   try{DriveApp.getFileById(fileId).setSharing(DriveApp.Access.ANYONE_WITH_LINK,DriveApp.Permission.VIEW)}catch(e){}
 }
 
@@ -1257,11 +1256,11 @@ function getSoLieuCongDong(quanTriToken){
 // ---------- Trang trả về theo link ----------
 function dvTrang_(e){
   const p=(e&&e.parameter)||{};
-  if(p.trang==='cong-dong')return HtmlService.createHtmlOutputFromFile('CongDong').setTitle('Trường học 5.0 – Dự án tổng').addMetaTag('viewport','width=device-width, initial-scale=1');
+  if(p.trang==='cong-dong')return HtmlService.createHtmlOutputFromFile('CongDong').setTitle('Trường học 5.0 – Dự án tổng').addMetaTag('viewport','width=device-width, initial-scale=1').setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   if(!p.truong)return null;
   const ma=dvMa_(p.truong);
-  if(!dvVao_(ma))return HtmlService.createHtmlOutput('<div style="font-family:Segoe UI,Arial,sans-serif;max-width:540px;margin:70px auto;padding:24px;text-align:center;color:#243c35"><div style="font-size:44px">🏫</div><h2>Đơn vị này chưa được kích hoạt</h2><p>Link có mã “'+escapeHtml_(ma)+'” chưa hoạt động: đơn vị đang chờ duyệt, đã tạm ngừng, hoặc Google Sheet không còn chia sẻ cho hệ thống.</p><p>Để được kích hoạt nhanh, thầy cô gửi email đến <a href="mailto:'+DV_QT_EMAIL+'">'+DV_QT_EMAIL+'</a> để được kích hoạt.</p><p><a target="_top" href="'+DV_LINK+'?trang=cong-dong">Xem trang dự án Trường học 5.0</a></p></div>').setTitle('Trường học 5.0').addMetaTag('viewport','width=device-width, initial-scale=1');
+  if(!dvVao_(ma))return HtmlService.createHtmlOutput('<div style="font-family:Segoe UI,Arial,sans-serif;max-width:540px;margin:70px auto;padding:24px;text-align:center;color:#243c35"><div style="font-size:44px">🏫</div><h2>Đơn vị này chưa được kích hoạt</h2><p>Link có mã “'+escapeHtml_(ma)+'” chưa hoạt động: đơn vị đang chờ duyệt, đã tạm ngừng, hoặc Google Sheet không còn chia sẻ cho hệ thống.</p><p>Để được kích hoạt nhanh, thầy cô gửi email đến <a href="mailto:'+DV_QT_EMAIL+'">'+DV_QT_EMAIL+'</a> để được kích hoạt.</p><p><a target="_top" href="'+DV_LINK+'?trang=cong-dong">Xem trang dự án Trường học 5.0</a></p></div>').setTitle('Trường học 5.0').addMetaTag('viewport','width=device-width, initial-scale=1').setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   const ten=(DV_.loai==='TO'?DV_.to+' – ':'')+DV_.truong;
   const html=HtmlService.createHtmlOutputFromFile('Index').getContent().replace('<head>','<head><script>window.TH50_DV='+JSON.stringify(DV_.ma)+';window.TH50_DV_LOAI='+JSON.stringify(DV_.loai)+';window.TH50_DV_TEN='+JSON.stringify(ten).replace(/</g,'\\u003c')+';<\/script>');
-  return HtmlService.createHtmlOutput(html).setTitle('Trường học 5.0 · '+ten).addMetaTag('viewport','width=device-width, initial-scale=1');
+  return HtmlService.createHtmlOutput(html).setTitle('Trường học 5.0 · '+ten).addMetaTag('viewport','width=device-width, initial-scale=1').setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
